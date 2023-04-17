@@ -35,13 +35,21 @@ def troca_zero(entrada, posicao_zero, regras_possiveis, lista_visto, lista_abert
         if nodo_para_alterar not in lista_visto and nodo_para_alterar not in lista_aberto:
             lista_aberto.append(nodo_para_alterar)
             lista_movimentos.append((entrada, nodo_para_alterar, regra))
+        elif nodo_para_alterar in lista_visto:
+            # estado já foi visto, ignora
+            pass
+        elif nodo_para_alterar in lista_aberto:
+            # estado já está na lista de abertos, ignora
+            pass
     return lista_visto, lista_aberto, lista_movimentos
+
 
 
 def busca_em_largura(entrada, heuristica_var = "manhattan"):
     lista_aberto = [entrada]
     lista_visto = []
     lista_movimentos = []
+    lista_pontuacao = []
     count = 0
 
     while lista_aberto:
@@ -53,7 +61,7 @@ def busca_em_largura(entrada, heuristica_var = "manhattan"):
         regras_possiveis = acha_regra(posicao_zero)
         lista_visto, lista_aberto, lista_movimentos = troca_zero(nodo_atual, posicao_zero, regras_possiveis, lista_visto, lista_aberto, lista_movimentos)
         if heuristica_var == "manhattan" or heuristica_var == "simples":
-            lista_aberto = heuristica_funcao(lista_aberto, heuristica_var)
+            lista_aberto = heuristica_funcao(lista_aberto, heuristica_var, objetivo)
         count += 1
     return False
 
@@ -85,31 +93,35 @@ def manhattan_distance(matrix1, matrix2):
     return distance + abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1]) # Adicionando a distância de Manhattan entre os elementos "0" das duas matrizes
     
 
-def find_value(matrix, value):
-  for i in range(len(matrix)):
-    for j in range(len(matrix[i])):
-      if matrix[i][j] == value:
-        return (i, j)
-
-
 def heuristica_funcao(matrix, heuristica = "manhattan", objetivo = [[1,2,3],[4,5,6],[7,8,0]]):
     lista_pontuacao = []
     if heuristica == "manhattan":
         for filho in matrix:
-            lista_pontuacao.append(manhattan_distance(filho, objetivo))
+            lista_pontuacao.append((filho, manhattan_distance(filho, objetivo)))
     if heuristica == "simples":
         for filho in matrix:
-            lista_pontuacao.append(qtd_fora_do_lugar(filho, objetivo))
+            lista_pontuacao.append((filho, qtd_fora_do_lugar(filho, objetivo)))
 
-    indice = lista_pontuacao.index(min(lista_pontuacao))
+    lista_pontuacao = Sort_Tuple(lista_pontuacao)
+    
+    lista_pontuada = [] #lista_aberto com os estados já ordenados
+    for elemento in lista_pontuacao:
+        lista_pontuada.append(elemento[0])
+
 
     if heuristica == "busca_largura":
         return 0
 
-    return [matrix[indice]]
+    return lista_pontuada
+
+
+def Sort_Tuple(tup):
+    tup.sort(key = lambda x: x[1])
+    return tup
 
 
 def movimentos(lista_movimentos, entrada):
+    print(lista_movimentos)
     melhores_movimentos = []
     buscar = objetivo
     for movimento in reversed(lista_movimentos):
@@ -125,9 +137,9 @@ def movimentos(lista_movimentos, entrada):
 
 
 init = time.time()
-busca_larg = busca_em_largura(entrada_teste, "simples")
+busca_larg = busca_em_largura(entrada2, "manhattan")
 end = time.time()
-lista_mov = movimentos(busca_larg, entrada_teste)
+lista_mov = movimentos(busca_larg, entrada2)
 print(lista_mov)
 print(f"Quantidade de movimentos (contanto com a entrada): ", len(lista_mov))
 
